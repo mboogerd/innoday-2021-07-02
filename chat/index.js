@@ -149,6 +149,7 @@ const leave = async () => {
   if (activeChannel) {
     activeCounter.inc(-1);
     systemLog(`Leaving ${activeChannel.address.path}`);
+    activeChannel.add(`${process.env["USER"]} left ${foundChannel.address}`);
     await activeChannel.close();
     activeChannel = undefined;
     activeCounter = undefined;
