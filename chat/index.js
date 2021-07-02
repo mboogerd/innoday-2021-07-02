@@ -20,8 +20,8 @@ const options = {
 };
 
 OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
-  console.log("Connected to OrbitDB");
-  console.log(`My identity: ${orbitdb.identity.id}`);
+  systemLog("Connected to OrbitDB");
+  systemLog(`My identity: ${orbitdb.identity.id}`);
 
   const channels = await orbitdb.keyvalue(
     "/orbitdb/zdpuAuBYiKzBeebGAsfWLFBKonJuA5QzhFLfNr4Z6S12aWXkf/channels",
@@ -46,7 +46,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
         if (foundChannel) {
           activeChannel = await join(orbitdb, foundChannel.address);
         } else {
-          console.log(`Channel ${channelName} does not exist`);
+          systemLog(`Channel ${channelName} does not exist`);
         }
         break;
       }
@@ -56,7 +56,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
         const hash = await channels.put(channelName, {
           address: newChannel.address.toString(),
         });
-        console.log(`Created channel: ${newChannel.address}`);
+        systemLog(`Created channel: ${newChannel.address}`);
         activeChannel = await join(orbitdb, newChannel.address);
         break;
       }
@@ -75,20 +75,20 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
       }
       case "/whereami": {
         if (activeChannel) {
-          console.log(`You are in: ${activeChannel.address.path}`)
+          systemLog(`You are in: ${activeChannel.address.path}`)
         } else {
-          console.log("You are in the lobby")
+          systemLog("You are in the lobby")
         }
         break;
       }
       default: {
         if (message.startsWith("/")) {
-          console.log(`I don't understand ${message}`);
+          systemLog(`I don't understand ${message}`);
           break;
         } else if (activeChannel) {
           activeChannel.add(`[${process.env["USER"]}]: ${message}`);
         } else {
-          console.log("You're not in a channel, dude");
+          systemLog("You're not in a channel, dude");
         }
       }
     }
@@ -98,12 +98,12 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
 const getChannel = (message) => message.split(" ")[1];
 
 const join = async (orbitdb, channelAddress) => {
-  console.log(`Joining ${channelAddress}`);
+  systemLog(`Joining ${channelAddress}`);
 
   const activeChannel = await orbitdb.log(channelAddress, options);
   await activeChannel.load();
 
-  activeChannel.add(`${process.env["USER"]} joined ${channelAddress}!`);
+  activeChannel.add(`${process.env["USER"]} joined ${channelAddress}`);
 
   activeChannel.events.on(
     "replicate",
@@ -119,15 +119,17 @@ const join = async (orbitdb, channelAddress) => {
 
 const list = async (channels) => {
   const allChannels = await channels.all;
-  console.log("Current channels:");
+  systemLog("Current channels:");
   console.log(allChannels);
 };
 
 const leave = async (activeChannel) => {
-  console.log(`Leaving ${activeChannel.address.path}`)
+  systemLog(`Leaving ${activeChannel.address.path}`)
   await activeChannel.close();
 };
 
 const deleteChannel = async (channels, channelName) => {
   await channels.del(channelName);
 };
+
+const systemLog = (msg) => console.log(`[system] ${msg}`)
