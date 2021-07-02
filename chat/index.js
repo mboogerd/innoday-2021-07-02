@@ -36,5 +36,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
       .forEach((item) => item.payload.value);
   });
 
-  db.add("This is Jethro!");
+  console.log(db.address);
+
+  db.add(`This is ${process.env["USER"]}!`);
 });
