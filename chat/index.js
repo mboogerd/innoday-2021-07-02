@@ -56,7 +56,9 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
     }
 
     if (message.startsWith("/create")) {
-      var channel = getChannel(message);
+      const channel = getChannel(message);
+      channels.put({});
+
       activeChannel = await orbitdb.log(
         `/orbitdb/zdpuAsyNpbZvcZK4Gwp8CNux5xWZyLkSdLA7qQUseMbzpvNVZ/chatting-together`,
         options
