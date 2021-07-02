@@ -8,7 +8,7 @@ mkdir -p $ipfs_config
 docker run -d --name ipfs_host -e IPFS_SWARM_KEY_FILE="/config/swarm.key" -v $ipfs_config:/config -v $ipfs_staging:/export -v $ipfs_data:/data/ipfs -p 4002:4001 -p 4002:4001/udp -p 127.0.0.1:8081:8080 -p 127.0.0.1:5002:5001 ipfs/go-ipfs:latest
 
 docker exec ipfs_host ipfs bootstrap rm --all
-docker exec ipfs_host ipfs bootstrap add "/ip4/172.16.48.44/tcp/4001/p2p/12D3KooWA7mWoWpVQU6nknHUxsZE3Va9JwG8UraY7iKqL2CcgSHW"
+docker exec ipfs_host ipfs bootstrap add "/ip4/192.168.40.42/tcp/4001/p2p/12D3KooWA7mWoWpVQU6nknHUxsZE3Va9JwG8UraY7iKqL2CcgSHW"
 
 # Using docker compose
 
