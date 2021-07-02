@@ -38,6 +38,10 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
       .forEach((item) => console.log(item.payload.value));
   });
 
+  db.events.on("load.progress", (address, hash, entry, progress, total) => {
+    console.log(address, hash, entry, progress, total);
+  });
+
   console.log(db.address);
 
   const rl = readline.createInterface(process.stdin, process.stdout);
