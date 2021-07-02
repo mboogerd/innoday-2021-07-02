@@ -19,6 +19,9 @@ const options = {
   },
 };
 
+var activeChannel = undefined;
+var activeCounter = undefined;
+
 OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   systemLog("Connected to OrbitDB");
   systemLog(`My identity: ${orbitdb.identity.id}`);
@@ -28,54 +31,23 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
     options
   );
 
-  var activeChannel = undefined;
-  var activeCounter = undefined;
-
   const rl = readline.createInterface(process.stdin);
 
   rl.on("line", async (message) => {
     const command = message.split(" ")[0];
     switch (command) {
       case "/join": {
-        if (activeChannel) {
-          await leave(activeChannel);
-          activeChannel = undefined;
-          activeCounter = undefined;
-        }
-
         const channelName = getChannel(message);
-        const foundChannel = await channels.get(channelName);
-        if (foundChannel) {
-          activeCounter = await orbitdb.counter(
-            foundChannel.counterAddress,
-            options
-          );
-          activeCounter.inc(1);
-          activeChannel = await join(orbitdb, foundChannel.address);
-        } else {
-          systemLog(`Channel ${channelName} does not exist`);
-        }
+        await join(orbitdb, channels, channelName);
         break;
       }
       case "/create": {
         const channelName = getChannel(message);
-        const newChannel = await orbitdb.log(channelName, options);
-        const newCounter = await orbitdb.counter(channelName, options);
-
-        await channels.put(channelName, {
-          address: newChannel.address.toString(),
-          counterAddress: newCounter.address.toString(),
-        });
-
-        systemLog(`Created channel: ${newChannel.address}`);
-        activeChannel = await join(orbitdb, newChannel.address);
+        await create(orbitdb, channels, channelName);
         break;
       }
       case "/leave": {
-        activeCounter.inc(-1);
-        await leave(activeChannel);
-        activeChannel = undefined;
-        activeCounter = undefined;
+        await leave();
         break;
       }
       case "/list": {
@@ -96,7 +68,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
       }
       case "/online": {
         if (activeCounter) {
-          systemLog(`There are ${activeCounter.value} users online`)
+          systemLog(`There are ${activeCounter.value} users online`);
         }
         break;
       }
@@ -124,24 +96,47 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
 
 const getChannel = (message) => message.split(" ")[1];
 
-const join = async (orbitdb, channelAddress) => {
-  systemLog(`Joining ${channelAddress}`);
+const join = async (orbitdb, channels, channelName) => {
+  if (activeChannel) {
+    await leave(activeChannel);
+  }
 
-  const activeChannel = await orbitdb.log(channelAddress, options);
-  await activeChannel.load();
+  const foundChannel = await channels.get(channelName);
+  if (foundChannel) {
+    activeCounter = await orbitdb.counter(foundChannel.counterAddress, options);
+    activeCounter.inc(1);
 
-  activeChannel.add(`${process.env["USER"]} joined ${channelAddress}`);
+    systemLog(`Joining ${foundChannel.address}`);
 
-  activeChannel.events.on(
-    "replicate",
-    (address, entry) => entry.payload && console.log(entry.payload.value)
-  );
+    activeChannel = await orbitdb.log(foundChannel.address, options);
+    await activeChannel.load();
 
-  activeChannel.events.on("log.op.ADD", (id, hash, payload) =>
-    console.log(`${payload?.value}`)
-  );
+    activeChannel.add(`${process.env["USER"]} joined ${foundChannel.address}`);
 
-  return activeChannel;
+    activeChannel.events.on(
+      "replicate",
+      (address, entry) => entry.payload && console.log(entry.payload.value)
+    );
+
+    activeChannel.events.on("log.op.ADD", (id, hash, payload) =>
+      console.log(`${payload?.value}`)
+    );
+  } else {
+    systemLog(`Channel ${channelName} does not exist`);
+  }
+};
+
+const create = async (orbitdb, channels, channelName) => {
+  const newChannel = await orbitdb.log(channelName, options);
+  const newCounter = await orbitdb.counter(channelName, options);
+
+  await channels.put(channelName, {
+    address: newChannel.address.toString(),
+    counterAddress: newCounter.address.toString(),
+  });
+
+  systemLog(`Created channel: ${newChannel.address}`);
+  await join(orbitdb, channels, channelName);
 };
 
 const list = async (channels) => {
@@ -150,9 +145,14 @@ const list = async (channels) => {
   console.log(allChannels);
 };
 
-const leave = async (activeChannel) => {
-  systemLog(`Leaving ${activeChannel.address.path}`);
-  await activeChannel.close();
+const leave = async () => {
+  if (activeChannel) {
+    activeCounter.inc(-1);
+    systemLog(`Leaving ${activeChannel.address.path}`);
+    await activeChannel.close();
+    activeChannel = undefined;
+    activeCounter = undefined;
+  }
 };
 
 const deleteChannel = async (channels, channelName) => {
