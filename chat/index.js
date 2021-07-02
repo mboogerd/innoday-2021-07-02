@@ -22,8 +22,8 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
     },
   };
 
-  const spawnDB = await orbitdb.log(`chatting-together`, options);
-  console.log(spawnDB.address);
+  // const spawnDB = await orbitdb.log(`chatting-together`, options);
+  // console.log(spawnDB.address);
 
   const db = await orbitdb.log(
     `/orbitdb/zdpuAxD5RQbHn4HZDMexTiNusF4Vv4vMmhVfAUNs37LYk22tz/chatting-together`,
