@@ -1,6 +1,6 @@
 const IpfsClient = require("ipfs-http-client");
 const OrbitDB = require("orbit-db");
-const readline = require('readline');
+const readline = require("readline");
 
 const ipfs = IpfsClient.create("http://localhost:5001");
 
@@ -32,21 +32,21 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   );
   await db.load();
 
-  db.events.on("replicated", (address) => {
-    db.iterator({ limit: -1 })
-      .collect()
-      .forEach((item) => console.log(item.payload.value));
-  });
+  // db.events.on("replicated", (address) => {
+  //   db.iterator({ limit: -1 })
+  //     .collect()
+  //     .forEach((item) => console.log(item.payload.value));
+  // });
 
-  db.events.on("load.progress", (address, hash, entry, progress, total) => {
-    console.log(address, hash, entry, progress, total);
+  db.events.on("log.op.ADD", (id, hash, payload) => {
+    console.log(payload.value);
   });
 
   console.log(db.address);
 
   const rl = readline.createInterface(process.stdin, process.stdout);
 
-  rl.on('line', (message) => {
-    db.add(`[${process.env["USER"]}]: ${message}`)
-  })
+  rl.on("line", (message) => {
+    db.add(`[${process.env["USER"]}]: ${message}`);
+  });
 });
