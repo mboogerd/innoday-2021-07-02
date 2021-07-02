@@ -44,7 +44,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
 
   console.log(db.address);
 
-  const rl = readline.createInterface(process.stdin, process.stdout);
+  const rl = readline.createInterface(process.stdin);
 
   rl.on("line", (message) => {
     db.add(`[${process.env["USER"]}]: ${message}`);
