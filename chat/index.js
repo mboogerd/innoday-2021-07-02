@@ -88,7 +88,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
           systemLog(`I don't understand ${message}`);
           break;
         } else if (activeChannel) {
-          activeChannel.add(`${new Date().toLocaleString()} - [${process.env["USER"]}]: ${message}`);
+          activeChannel.add(`${new Date().toUTCString()} - [${process.env["USER"]}]: ${message}`);
         } else {
           systemLog("You're not in a channel, dude");
         }
