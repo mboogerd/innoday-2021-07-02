@@ -28,8 +28,6 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
     options
   );
 
-  console.log(channels.address);
-
   var activeChannel = undefined;
 
   const rl = readline.createInterface(process.stdin);
@@ -90,6 +88,8 @@ const join = async (orbitdb, channelAddress) => {
 
   const activeChannel = await orbitdb.log(channelAddress, options);
   await activeChannel.load();
+
+  activeChannel.add(`${process.env["USER"]} joined ${channelAddress}!`);
 
   activeChannel.events.on(
     "replicate",
