@@ -32,12 +32,13 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   );
   await db.load();
 
-  db.events.on("replicate", (address, entry) =>
-    entry.payload && console.log(entry.payload.value)
+  db.events.on(
+    "replicate",
+    (address, entry) => entry.payload && console.log(entry.payload.value)
   );
 
   db.events.on("log.op.ADD", (id, hash, payload) =>
-    console.log(`> ${payload.value}`)
+    console.log(`> ${payload?.value}`)
   );
 
   console.log(db.address);
