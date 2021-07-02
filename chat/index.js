@@ -77,7 +77,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
       }
       case "/shrug": {
         if (activeChannel) {
-          activeChannel.add(`[${process.env["USER"]}]: ¯\\_(ツ)_/¯`);
+          activeChannel.add(`${new Date().toUTCString()} - [${process.env["USER"]}]: ¯\\_(ツ)_/¯`);
         } else {
           systemLog("You are only allowed to shrug in a channel");
         }
