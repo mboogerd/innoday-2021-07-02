@@ -20,7 +20,6 @@ const options = {
 };
 
 var activeChannel = undefined;
-var activeCounter = undefined;
 
 OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   systemLog("Connected to OrbitDB");
@@ -67,9 +66,13 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
         break;
       }
       case "/peers": {
-        const peers = await ipfs.pubsub.peers(activeChannel.address.toString())
-        systemLog("Peers:")
-        console.log(peers)
+        if (activeChannel) {
+          const peers = await ipfs.pubsub.peers(activeChannel.address.toString())
+          systemLog("Peers:")
+          console.log(peers)
+        } else {
+          console.log("Please join a channel first")
+        }
         break;
       }
       case "/shrug": {
@@ -103,9 +106,6 @@ const join = async (orbitdb, channels, channelName) => {
 
   const foundChannel = await channels.get(channelName);
   if (foundChannel) {
-    activeCounter = await orbitdb.counter(foundChannel.counterAddress, options);
-    activeCounter.inc(1);
-
     systemLog(`Joining ${foundChannel.address}`);
 
     activeChannel = await orbitdb.log(foundChannel.address, options);
@@ -128,11 +128,9 @@ const join = async (orbitdb, channels, channelName) => {
 
 const create = async (orbitdb, channels, channelName) => {
   const newChannel = await orbitdb.log(channelName, options);
-  const newCounter = await orbitdb.counter(channelName, options);
 
   await channels.put(channelName, {
     address: newChannel.address.toString(),
-    counterAddress: newCounter.address.toString(),
   });
 
   systemLog(`Created channel: ${newChannel.address}`);
@@ -147,14 +145,12 @@ const list = async (channels) => {
 
 const leave = async () => {
   if (activeChannel) {
-    activeCounter.inc(-1);
     systemLog(`Leaving ${activeChannel.address.path}`);
     await activeChannel.add(
       `${process.env["USER"]} left ${activeChannel.address}`
     );
     await activeChannel.close();
     activeChannel = undefined;
-    activeCounter = undefined;
   }
 };
 
