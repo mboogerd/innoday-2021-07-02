@@ -27,7 +27,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   // console.log(spawnDB.address);
 
   const db = await orbitdb.log(
-    `/orbitdb/zdpuAxD5RQbHn4HZDMexTiNusF4Vv4vMmhVfAUNs37LYk22tz/chatting-together`,
+    `/orbitdb/zdpuAsyNpbZvcZK4Gwp8CNux5xWZyLkSdLA7qQUseMbzpvNVZ/chatting-together`,
     options
   );
   await db.load();
