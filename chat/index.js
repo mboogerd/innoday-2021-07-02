@@ -16,6 +16,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
         "02d418b70b13c79773aa74998c26d26af828a157a90096c3e25ef7a31f69cb9055", // Arjan
         "03bd95a4b1d91681648bfb1a9f7554ce9d14c1cf6290d8804d685f20963c80d7cc", // Jethro
         "02509fcf34235a01a5ce87e0efae80656a85b813918040a32d32652e2ae295ea52", // Matthijs
+        "03a6f45b10945223b9472c3b9973897e8fe94c4684d3105ee6084688524145502e", // Jan
       ],
     },
   };
