@@ -36,5 +36,5 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
 
   console.log(db.address);
 
-  db.add("This is Merlijn!");
+  db.add(`This is ${process.env["USER"]}!`);
 });
