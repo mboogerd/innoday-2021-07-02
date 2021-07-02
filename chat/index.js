@@ -29,9 +29,6 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   );
 
   console.log(channels.address);
-  // const spawnDB = await orbitdb.log(`chatting-together`, options);
-  // console.log(spawnDB.address);
-
   // channels.events.on(
   //   "replicate",
   //   (address, entry) => entry.payload && console.log(entry.payload.value)
@@ -62,6 +59,8 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
       leave(activeChannel);
     } else if (message.startsWith("/list")) {
       list(channels);
+    } else if (message.startsWith("/delete")) {
+      deleteChannel(channels, getChannel(message));
     } else {
       activeChannel.add(`[${process.env["USER"]}]: ${message}`);
     }
@@ -85,7 +84,7 @@ const join = async (orbitdb, channelAddress) => {
     console.log(`> ${payload?.value}`)
   );
 
-  return activeChannel
+  return activeChannel;
 };
 
 const list = async (channels) => {
@@ -97,4 +96,8 @@ const list = async (channels) => {
 const leave = async (activeChannel) => {
   await activeChannel.close();
   activeChannel == undefined;
+};
+
+const deleteChannel = async (channels, channelName) => {
+  await channels.del(channelName);
 };
