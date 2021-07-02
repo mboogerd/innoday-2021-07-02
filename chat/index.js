@@ -36,6 +36,11 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
     const command = message.split(" ")[0];
     switch (command) {
       case "/join": {
+        if (activeChannel) {
+          await leave(activeChannel);
+          activeChannel = undefined;
+        }
+
         const channelName = getChannel(message);
         const foundChannel = await channels.get(channelName);
         if (foundChannel) {
@@ -56,7 +61,8 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
         break;
       }
       case "/leave": {
-        leave(activeChannel);
+        await leave(activeChannel);
+        activeChannel = undefined;
         break;
       }
       case "/list": {
@@ -65,6 +71,14 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
       }
       case "/delete": {
         deleteChannel(channels, getChannel(message));
+        break;
+      }
+      case "/whereami": {
+        if (activeChannel) {
+          console.log(`You are in: ${activeChannel.address.path}`)
+        } else {
+          console.log("You are in the lobby")
+        }
         break;
       }
       default: {
@@ -84,7 +98,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
 const getChannel = (message) => message.split(" ")[1];
 
 const join = async (orbitdb, channelAddress) => {
-  console.log(`Joining: ${channelAddress}`);
+  console.log(`Joining ${channelAddress}`);
 
   const activeChannel = await orbitdb.log(channelAddress, options);
   await activeChannel.load();
@@ -110,8 +124,8 @@ const list = async (channels) => {
 };
 
 const leave = async (activeChannel) => {
+  console.log(`Leaving ${activeChannel.address.path}`)
   await activeChannel.close();
-  activeChannel == undefined;
 };
 
 const deleteChannel = async (channels, channelName) => {
