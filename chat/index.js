@@ -21,7 +21,10 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
     },
   };
 
-  const db = await orbitdb.log("chat-together", options);
+  const db = await orbitdb.log(
+    `zdpuAsLzqPyDWzYNTcb3wdeE3E7svJdn7UrKNVL6v8YHMMaq6/chat-together`,
+    options
+  );
   await db.load();
 
   db.events.on("replicated", (address) => {
