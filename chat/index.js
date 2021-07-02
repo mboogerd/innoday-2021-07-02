@@ -30,8 +30,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   console.log(orbitdb.identity);
 
   db.events.on("replicated", (address) => {
-    console.log(address);
-    console.log(db.iterator({ limit: -1 }).collect());
+    db.iterator({ limit: -1 }).collect().forEach(item => item.payload.value)
   });
 
   console.log(db.address);
