@@ -66,10 +66,10 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
         }
         break;
       }
-      case "/online": {
-        if (activeCounter) {
-          systemLog(`There are ${activeCounter.value} users online`);
-        }
+      case "/peers": {
+        const peers = await ipfs.pubsub.peers(activeChannel.address.toString())
+        systemLog("Peers:")
+        console.log(peers)
         break;
       }
       case "/shrug": {
