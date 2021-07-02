@@ -29,6 +29,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   );
 
   var activeChannel = undefined;
+  var activeCounter = undefined;
 
   const rl = readline.createInterface(process.stdin);
 
@@ -39,11 +40,17 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
         if (activeChannel) {
           await leave(activeChannel);
           activeChannel = undefined;
+          activeCounter = undefined;
         }
 
         const channelName = getChannel(message);
         const foundChannel = await channels.get(channelName);
         if (foundChannel) {
+          activeCounter = await orbitdb.counter(
+            foundChannel.counterAddress,
+            options
+          );
+          activeCounter.inc(1);
           activeChannel = await join(orbitdb, foundChannel.address);
         } else {
           systemLog(`Channel ${channelName} does not exist`);
@@ -53,16 +60,22 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
       case "/create": {
         const channelName = getChannel(message);
         const newChannel = await orbitdb.log(channelName, options);
-        const hash = await channels.put(channelName, {
+        const newCounter = await orbitdb.counter(channelName, options);
+
+        await channels.put(channelName, {
           address: newChannel.address.toString(),
+          counterAddress: newCounter.address.toString(),
         });
+
         systemLog(`Created channel: ${newChannel.address}`);
         activeChannel = await join(orbitdb, newChannel.address);
         break;
       }
       case "/leave": {
+        activeCounter.inc(-1);
         await leave(activeChannel);
         activeChannel = undefined;
+        activeCounter = undefined;
         break;
       }
       case "/list": {
@@ -75,9 +88,15 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
       }
       case "/whereami": {
         if (activeChannel) {
-          systemLog(`You are in: ${activeChannel.address.path}`)
+          systemLog(`You are in: ${activeChannel.address.path}`);
         } else {
-          systemLog("You are in the lobby")
+          systemLog("You are in the lobby");
+        }
+        break;
+      }
+      case "/online": {
+        if (activeCounter) {
+          systemLog(`There are ${activeCounter.value} users online`)
         }
         break;
       }
@@ -85,7 +104,7 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
         if (activeChannel) {
           activeChannel.add(`[${process.env["USER"]}]: ¯\\_(ツ)_/¯`);
         } else {
-          systemLog("You are only allowed to shrug in a channel")
+          systemLog("You are only allowed to shrug in a channel");
         }
         break;
       }
@@ -132,7 +151,7 @@ const list = async (channels) => {
 };
 
 const leave = async (activeChannel) => {
-  systemLog(`Leaving ${activeChannel.address.path}`)
+  systemLog(`Leaving ${activeChannel.address.path}`);
   await activeChannel.close();
 };
 
@@ -140,4 +159,4 @@ const deleteChannel = async (channels, channelName) => {
   await channels.del(channelName);
 };
 
-const systemLog = (msg) => console.log(`[system] ${msg}`)
+const systemLog = (msg) => console.log(`[system] ${msg}`);
