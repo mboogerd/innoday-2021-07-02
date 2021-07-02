@@ -1,5 +1,6 @@
 const IpfsClient = require("ipfs-http-client");
 const OrbitDB = require("orbit-db");
+const readline = require('readline');
 
 const ipfs = IpfsClient.create("http://localhost:5001");
 
@@ -39,5 +40,9 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
 
   console.log(db.address);
 
-  db.add(`This is ${process.env["USER"]}!`);
+  const rl = readline.createInterface(process.stdin, process.stdout);
+
+  rl.on('line', (message) => {
+    db.add(`[${process.env["USER"]}]: ${message}`)
+  })
 });
