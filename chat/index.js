@@ -81,6 +81,14 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
         }
         break;
       }
+      case "/shrug": {
+        if (activeChannel) {
+          activeChannel.add(`[${process.env["USER"]}]: ¯\\_(ツ)_/¯`);
+        } else {
+          systemLog("You are only allowed to shrug in a channel")
+        }
+        break;
+      }
       default: {
         if (message.startsWith("/")) {
           systemLog(`I don't understand ${message}`);
