@@ -32,42 +32,39 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   // const spawnDB = await orbitdb.log(`chatting-together`, options);
   // console.log(spawnDB.address);
 
-  channels.events.on(
-    "replicate",
-    (address, entry) => entry.payload && console.log(entry.payload.value)
-  );
+  // channels.events.on(
+  //   "replicate",
+  //   (address, entry) => entry.payload && console.log(entry.payload.value)
+  // );
 
   var activeChannel = undefined;
-
-  // console.log(channels.address);
 
   const rl = readline.createInterface(process.stdin);
 
   rl.on("line", async (message) => {
     if (message.startsWith("/join")) {
       const channelName = getChannel(message);
-      const channelAddress = await channels.get(channelName);
-      console.log(channelAddress);
-      await join(orbitdb, channelAddress);
-    }
-
-    if (message.startsWith("/create")) {
+      const foundChannel = await channels.get(channelName);
+      if (foundChannel) {
+        activeChannel = await join(orbitdb, foundChannel.address);
+      } else {
+        console.log(`Channel ${channelName} does not exist`);
+      }
+    } else if (message.startsWith("/create")) {
       const channelName = getChannel(message);
       const newChannel = await orbitdb.log(channelName, options);
-      await channels.put(channelName, newChannel.address);
+      const hash = await channels.put(channelName, {
+        address: newChannel.address.toString(),
+      });
       console.log(`Created channel: ${newChannel.address}`);
-      await join(orbitdb, newChannel.address);
-    }
-
-    if (message.startsWith("/leave")) {
+      activeChannel = await join(orbitdb, newChannel.address);
+    } else if (message.startsWith("/leave")) {
       leave(activeChannel);
-    }
-
-    if (message.startsWith("/list")) {
+    } else if (message.startsWith("/list")) {
       list(channels);
+    } else {
+      activeChannel.add(`[${process.env["USER"]}]: ${message}`);
     }
-
-    // db.add(`[${process.env["USER"]}]: ${message}`);
   });
 });
 
@@ -76,7 +73,7 @@ const getChannel = (message) => message.split(" ")[1];
 const join = async (orbitdb, channelAddress) => {
   console.log(`Joining: ${channelAddress}`);
 
-  activeChannel = await orbitdb.log(channelAddress, options);
+  const activeChannel = await orbitdb.log(channelAddress, options);
   await activeChannel.load();
 
   activeChannel.events.on(
@@ -87,6 +84,8 @@ const join = async (orbitdb, channelAddress) => {
   activeChannel.events.on("log.op.ADD", (id, hash, payload) =>
     console.log(`> ${payload?.value}`)
   );
+
+  return activeChannel
 };
 
 const list = async (channels) => {
@@ -96,6 +95,6 @@ const list = async (channels) => {
 };
 
 const leave = async (activeChannel) => {
-  await activeChannel.disconnect();
+  await activeChannel.close();
   activeChannel == undefined;
 };
