@@ -29,40 +29,56 @@ OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
   );
 
   console.log(channels.address);
-  // channels.events.on(
-  //   "replicate",
-  //   (address, entry) => entry.payload && console.log(entry.payload.value)
-  // );
 
   var activeChannel = undefined;
 
   const rl = readline.createInterface(process.stdin);
 
   rl.on("line", async (message) => {
-    if (message.startsWith("/join")) {
-      const channelName = getChannel(message);
-      const foundChannel = await channels.get(channelName);
-      if (foundChannel) {
-        activeChannel = await join(orbitdb, foundChannel.address);
-      } else {
-        console.log(`Channel ${channelName} does not exist`);
+    const command = message.split(" ")[0];
+    switch (command) {
+      case "/join": {
+        const channelName = getChannel(message);
+        const foundChannel = await channels.get(channelName);
+        if (foundChannel) {
+          activeChannel = await join(orbitdb, foundChannel.address);
+        } else {
+          console.log(`Channel ${channelName} does not exist`);
+        }
+        break;
       }
-    } else if (message.startsWith("/create")) {
-      const channelName = getChannel(message);
-      const newChannel = await orbitdb.log(channelName, options);
-      const hash = await channels.put(channelName, {
-        address: newChannel.address.toString(),
-      });
-      console.log(`Created channel: ${newChannel.address}`);
-      activeChannel = await join(orbitdb, newChannel.address);
-    } else if (message.startsWith("/leave")) {
-      leave(activeChannel);
-    } else if (message.startsWith("/list")) {
-      list(channels);
-    } else if (message.startsWith("/delete")) {
-      deleteChannel(channels, getChannel(message));
-    } else {
-      activeChannel.add(`[${process.env["USER"]}]: ${message}`);
+      case "/create": {
+        const channelName = getChannel(message);
+        const newChannel = await orbitdb.log(channelName, options);
+        const hash = await channels.put(channelName, {
+          address: newChannel.address.toString(),
+        });
+        console.log(`Created channel: ${newChannel.address}`);
+        activeChannel = await join(orbitdb, newChannel.address);
+        break;
+      }
+      case "/leave": {
+        leave(activeChannel);
+        break;
+      }
+      case "/list": {
+        list(channels);
+        break;
+      }
+      case "/delete": {
+        deleteChannel(channels, getChannel(message));
+        break;
+      }
+      default: {
+        if (message.startsWith("/")) {
+          console.log(`I don't understand ${message}`);
+          break;
+        } else if (activeChannel) {
+          activeChannel.add(`[${process.env["USER"]}]: ${message}`);
+        } else {
+          console.log("You're not in a channel, dude");
+        }
+      }
     }
   });
 });
@@ -81,7 +97,7 @@ const join = async (orbitdb, channelAddress) => {
   );
 
   activeChannel.events.on("log.op.ADD", (id, hash, payload) =>
-    console.log(`> ${payload?.value}`)
+    console.log(`${payload?.value}`)
   );
 
   return activeChannel;
