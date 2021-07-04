@@ -1,0 +1,1 @@
+docker stop ipfs_host_$1 && docker rm ipfs_host_$1

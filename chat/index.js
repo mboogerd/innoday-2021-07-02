@@ -2,100 +2,113 @@ const IpfsClient = require("ipfs-http-client");
 const OrbitDB = require("orbit-db");
 const readline = require("readline");
 
-const ipfs = IpfsClient.create("http://localhost:5001");
-
 const options = {
   // Setup write access
   accessController: {
-    write: [
-      "033eda95ba4c528875c692c4c7f267b51bc42807a289f1657c23594c37e5b2fcd6", // Merlijn
-      "03990f6dabfd6d20a1cae72d22262089429659fdc885b8c45dc42572984b891fd8", // Leon
-      "0258983317361a634a310b5f96aa66e772f834844db4e978b505e0bffac66677f1", // Arjan
-      "03bd95a4b1d91681648bfb1a9f7554ce9d14c1cf6290d8804d685f20963c80d7cc", // Jethro
-      "02509fcf34235a01a5ce87e0efae80656a85b813918040a32d32652e2ae295ea52", // Matthijs
-      "03a6f45b10945223b9472c3b9973897e8fe94c4684d3105ee6084688524145502e", // Jan
-      // "*", // everybody!
-    ],
+    write: ["*"],
   },
 };
 
 var activeChannel = undefined;
 
-OrbitDB.createInstance(ipfs).then(async (orbitdb) => {
-  systemLog("Connected to OrbitDB");
-  systemLog(`My identity: ${orbitdb.identity.id}`);
+const orbitDBFolder = process.argv[2] || "client";
+const ipfsPort = process.argv[3] || 5001;
+const ipfs = IpfsClient.create(`http://localhost:${ipfsPort}`);
 
-  const channels = await orbitdb.keyvalue(
-    "/orbitdb/zdpuAuBYiKzBeebGAsfWLFBKonJuA5QzhFLfNr4Z6S12aWXkf/channels",
-    options
-  );
+OrbitDB.createInstance(ipfs, { directory: orbitDBFolder }).then(
+  async (orbitdb) => {
+    systemLog("Connected to OrbitDB");
 
-  const rl = readline.createInterface(process.stdin);
+    const channels = await orbitdb.keyvalue(
+      "/orbitdb/zdpuArTZLKcyAA984iHhoaTFNARQTcxnaXJa4J8gNnsxtXXQS/channels",
+      options
+    );
+    await channels.load();
 
-  rl.on("line", async (message) => {
-    const command = message.split(" ")[0];
-    switch (command) {
-      case "/join": {
-        const channelName = getChannel(message);
-        await join(orbitdb, channels, channelName);
-        break;
-      }
-      case "/create": {
-        const channelName = getChannel(message);
-        await create(orbitdb, channels, channelName);
-        break;
-      }
-      case "/leave": {
-        await leave();
-        break;
-      }
-      case "/list": {
-        list(channels);
-        break;
-      }
-      case "/delete": {
-        deleteChannel(channels, getChannel(message));
-        break;
-      }
-      case "/whereami": {
-        if (activeChannel) {
-          systemLog(`You are in: ${activeChannel.address.path}`);
-        } else {
-          systemLog("You are in the lobby");
-        }
-        break;
-      }
-      case "/peers": {
-        if (activeChannel) {
-          const peers = await ipfs.pubsub.peers(activeChannel.address.toString())
-          systemLog("Peers:")
-          console.log(peers)
-        } else {
-          console.log("Please join a channel first")
-        }
-        break;
-      }
-      case "/shrug": {
-        if (activeChannel) {
-          activeChannel.add(`${new Date().toUTCString()} - [${process.env["USER"]}]: ¯\\_(ツ)_/¯`);
-        } else {
-          systemLog("You are only allowed to shrug in a channel");
-        }
-        break;
-      }
-      default: {
-        if (message.startsWith("/")) {
-          systemLog(`I don't understand ${message}`);
+    // await channels.put("_", { lastOnline: process.argv[2] });
+    // console.log(channels.address.toString());
+
+    const rl = readline.createInterface(process.stdin);
+
+    rl.on("line", async (message) => {
+      const command = message.split(" ")[0];
+      switch (command) {
+        case "/join": {
+          const channelName = getChannel(message);
+          await join(orbitdb, channels, channelName);
           break;
-        } else if (activeChannel) {
-          activeChannel.add(`${new Date().toUTCString()} - [${process.env["USER"]}]: ${message}`);
-        } else {
-          systemLog("You're not in a channel, dude");
+        }
+        case "/create": {
+          const channelName = getChannel(message);
+          await create(orbitdb, channels, channelName);
+          break;
+        }
+        case "/leave": {
+          await leave();
+          break;
+        }
+        case "/list": {
+          list(channels);
+          break;
+        }
+        case "/delete": {
+          deleteChannel(channels, getChannel(message));
+          break;
+        }
+        case "/whereami": {
+          if (activeChannel) {
+            systemLog(`You are in: ${activeChannel.address.path}`);
+          } else {
+            systemLog("You are in the lobby");
+          }
+          break;
+        }
+        case "/peers": {
+          if (activeChannel) {
+            const peers = await ipfs.pubsub.peers(
+              activeChannel.address.toString()
+            );
+            systemLog("Peers:");
+            console.log(peers);
+          } else {
+            console.log("Please join a channel first");
+          }
+          break;
+        }
+        case "/shrug": {
+          if (activeChannel) {
+            activeChannel.add(
+              `${new Date().toUTCString()} - [${
+                process.env["USER"]
+              }]: ¯\\_(ツ)_/¯`
+            );
+          } else {
+            systemLog("You are only allowed to shrug in a channel");
+          }
+          break;
+        }
+        case "/debug": {
+          printDebugInfo(ipfs, orbitdb);
+          break;
+        }
+        default: {
+          if (message.startsWith("/")) {
+            systemLog(`I don't understand ${message}`);
+            break;
+          } else if (activeChannel) {
+            activeChannel.add(
+              `${new Date().toUTCString()} - [${
+                process.env["USER"]
+              }]: ${message}`
+            );
+          } else {
+            systemLog("You're not in a channel, dude");
+          }
         }
       }
-    }
-  });
-});
+    });
+  }
+);
 
 const getChannel = (message) => message.split(" ")[1];
 
@@ -158,4 +171,15 @@ const deleteChannel = async (channels, channelName) => {
   await channels.del(channelName);
 };
 
-const systemLog = (msg) => console.log(`[system] ${msg}`);
+const printDebugInfo = async (ipfs, orbitdb) => {
+  systemLog(`My IPFS Identity:    `, (await ipfs.id()).id);
+  systemLog(`My Swarm address:    `, ipfs.swarm.address);
+  systemLog(`My OrbitDB identity: `, orbitdb.identity.id);
+  systemLog(`Swarm peers:         `, await ipfs.swarm.peers());
+  systemLog(`Pubsub topics:       `, await ipfs.pubsub.ls());
+};
+
+const systemLog = (msg, other) =>
+  other
+    ? console.log(`[system] ${msg}`, other)
+    : console.log(`[system] ${msg}`);
