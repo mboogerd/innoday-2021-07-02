@@ -4,7 +4,11 @@ import readline from "readline";
 
 const ChatApp = async (orbitdb, channelsAddress, user) => {
   const channels = await Channels.create(orbitdb, channelsAddress);
-  const lobbyCommandHandler = new LobbyCommandHandler(channels, user);
+  const lobbyCommandHandler = new LobbyCommandHandler(
+    channels,
+    user,
+    eventHandler
+  );
 
   const rl = readline.createInterface(process.stdin);
 
@@ -51,5 +55,20 @@ const getCommandLine = (line) => {
   if (command.startsWith("/")) return [command.slice(1), args];
   else return ["say", [line]];
 };
+
+const eventHandler = {
+  onMessage: ({ user, message, timestamp }) => {
+    console.log(`[${user.name}] ${message}`);
+  },
+  onJoin: ({ user, channel }) =>
+    systemLog(`${user.name} joined ${channel.name}`),
+  onLeave: ({ user, channel }) =>
+    systemLog(`${user.name} left ${channel.name}`),
+};
+
+const systemLog = (msg, other) =>
+  other
+    ? console.log(`[system] ${msg}`, other)
+    : console.log(`[system] ${msg}`);
 
 export default ChatApp;

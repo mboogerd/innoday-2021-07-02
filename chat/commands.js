@@ -1,7 +1,8 @@
 export class LobbyCommandHandler {
-  constructor(channels, user) {
+  constructor(channels, user, eventHandler) {
     this.channels = channels;
     this.user = user;
+    this.eventHandler = eventHandler;
   }
 
   async createChannel(channelName) {
@@ -23,15 +24,10 @@ export class LobbyCommandHandler {
     const channel = await this.channels.getChannel(channelName);
     if (channel) {
       const activeChannel = await channel.join(this.user);
-      activeChannel.onMessage(({ user, message, timestamp }) => {
-        console.log(`[${user.name}] ${message}`);
-      });
-      activeChannel.onJoin(({ user }) =>
-        systemLog(`${user.name} joined ${channelName}`)
-      );
-      activeChannel.onLeave(({ user }) =>
-        systemLog(`${user.name} left ${channelName}`)
-      );
+      const { onMessage, onJoin, onLeave } = this.eventHandler;
+      if (onMessage) activeChannel.onMessage(onMessage);
+      if (onJoin) activeChannel.onJoin(onJoin);
+      if (onLeave) activeChannel.onLeave(onLeave);
       return new ChannelCommandHandler(this, activeChannel);
     }
     systemLog(`The channel ${channelName} could not be found`);

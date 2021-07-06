@@ -57,12 +57,20 @@ export class Channel {
     this.channelDb = channelDb;
   }
 
+  name() {
+    return this.channelDb.address.path;
+  }
+
   async join(user) {
     await this.channelDb.load();
     const joinMessage = {
       type: "join",
       user: user,
       timestamp: new Date().toISOString(),
+      channel: {
+        address: this.channelDb.address,
+        name: this.name(),
+      },
     };
     await this.channelDb.add(joinMessage);
     return new ActiveChannel(this, user);
@@ -88,6 +96,10 @@ export class ActiveChannel {
       type: "leave",
       user: this.user,
       timestamp: new Date().toISOString(),
+      channel: {
+        address: this.channel.channelDb.address,
+        name: this.name(),
+      },
     });
     return await this.channel.channelDb.close();
   }
@@ -98,6 +110,10 @@ export class ActiveChannel {
       user: this.user,
       message: message,
       timestamp: new Date().toISOString(),
+      channel: {
+        address: this.channel.channelDb.address,
+        name: this.name(),
+      },
     });
   }
 
