@@ -1,4 +1,5 @@
 instance=$1
+ip=$(ifconfig en0 | grep "inet " | cut -d\  -f2)
 
 if [ -z $instance ]; then
     instance=1
@@ -34,10 +35,11 @@ docker run \
     --writable \
     --enable-pubsub-experiment
 
+# This script presumes the existence of a bootstrap IPFS node at your en0 interface
 until docker exec $ipfs_host ipfs bootstrap rm --all
 do
     echo "IPFS not ready. Re-attempting to clear bootstrap nodes in 1 second"
     sleep 1
 done
 
-docker exec $ipfs_host ipfs bootstrap add "/ip4/192.168.1.132/tcp/4001/p2p/12D3KooWA7mWoWpVQU6nknHUxsZE3Va9JwG8UraY7iKqL2CcgSHW"
+docker exec $ipfs_host ipfs bootstrap add "/ip4/$ip/tcp/4001/p2p/12D3KooWA7mWoWpVQU6nknHUxsZE3Va9JwG8UraY7iKqL2CcgSHW"
